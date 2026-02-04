@@ -35,6 +35,13 @@ Utilities | Water |
 
 def get_taxonomy_set() -> set[str]:
     entries = set()
+    for row in get_taxonomy_rows():
+        entries.add(f"{row['L1']}|{row['L2']}|{row['L3']}")
+    return entries
+
+
+def get_taxonomy_rows() -> list[dict[str, str]]:
+    rows = []
     for line in TAXONOMY.strip().splitlines():
         line = line.strip()
         if not line or line.startswith("L1 ") or line.startswith("---"):
@@ -43,5 +50,5 @@ def get_taxonomy_set() -> set[str]:
         while len(parts) < 3:
             parts.append("")
         l1, l2, l3 = parts[0], parts[1], parts[2]
-        entries.add(f"{l1}|{l2}|{l3}")
-    return entries
+        rows.append({"L1": l1, "L2": l2, "L3": l3})
+    return rows
