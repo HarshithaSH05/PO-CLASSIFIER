@@ -31,3 +31,17 @@ Unaddressable | Tax |
 Utilities | Power |
 Utilities | Water |
 """
+
+
+def get_taxonomy_set() -> set[str]:
+    entries = set()
+    for line in TAXONOMY.strip().splitlines():
+        line = line.strip()
+        if not line or line.startswith("L1 ") or line.startswith("---"):
+            continue
+        parts = [part.strip() for part in line.split("|")]
+        while len(parts) < 3:
+            parts.append("")
+        l1, l2, l3 = parts[0], parts[1], parts[2]
+        entries.add(f"{l1}|{l2}|{l3}")
+    return entries
