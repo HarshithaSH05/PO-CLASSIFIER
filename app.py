@@ -5,12 +5,13 @@ import time
 import streamlit as st
 
 from classifier import classify_po
+from taxonomy import get_taxonomy_set
 
 logging.basicConfig(level=logging.INFO)
 
 st.set_page_config(page_title="PO Category Classifier", layout="centered")
 
-st.title("📦 PO L1–L2–L3 Classifier")
+st.title("PO L1-L2-L3 Classifier")
 st.caption("Paste a purchase order description to classify L1/L2/L3 categories.")
 
 po_description = st.text_area(
@@ -24,6 +25,15 @@ supplier = st.text_input(
     placeholder="Example: Acme Mechanical Inc.",
     help="Optional, but can improve classification accuracy.",
 )
+
+
+def _extract_levels(parsed: dict) -> tuple[str | None, str | None, str | None]:
+    key_map = {str(key).strip().lower(): key for key in parsed.keys()}
+    l1 = parsed.get(key_map.get("l1")) if "l1" in key_map else None
+    l2 = parsed.get(key_map.get("l2")) if "l2" in key_map else None
+    l3 = parsed.get(key_map.get("l3")) if "l3" in key_map else None
+    return l1, l2, l3
+
 
 if st.button("Classify"):
     po_description = po_description.strip()
@@ -66,6 +76,15 @@ if st.button("Classify"):
 
         if parsed is not None:
             st.json(parsed)
+
+            l1, l2, l3 = _extract_levels(parsed)
+            if l1 is not None and l2 is not None:
+                key = f"{str(l1).strip()}|{str(l2).strip()}|{str(l3 or '').strip()}"
+                if key not in get_taxonomy_set():
+                    st.warning("Classification not in taxonomy — needs review.")
+            else:
+                st.warning("Classification missing L1/L2 fields — needs review.")
+
             st.download_button(
                 "Download JSON",
                 data=json.dumps(parsed, indent=2),
@@ -74,7 +93,7 @@ if st.button("Classify"):
             )
         else:
             st.error("Invalid model response")
-            st.text(result)
+            st.code(result or "", language="text")
 
     with st.expander("Debug details"):
         st.write(f"Latency: {elapsed_ms:.1f} ms")
@@ -82,4 +101,4 @@ if st.button("Classify"):
             st.exception(error)
         else:
             st.write("Raw response:")
-            st.text(result)
+            st.code(result or "", language="text")
