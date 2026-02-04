@@ -18,7 +18,8 @@ STRICT OUTPUT FORMAT:
   "L1": "<value or Not sure>",
   "L2": "<value or Not sure>",
   "L3": "<value or Not sure>",
-  "match_quality": "<exact | closest | not_sure>"
+  "match_quality": "<exact | closest | not_sure>",
+  "confidence": "<number between 0.0 and 1.0>"
 }}
 
 TAXONOMY:
@@ -37,7 +38,8 @@ Output:
   "L1": "IT",
   "L2": "Software",
   "L3": "Subscription",
-  "match_quality": "exact"
+  "match_quality": "exact",
+  "confidence": 0.92
 }}
 
 Example 2:
@@ -51,7 +53,8 @@ Output:
   "L1": "Banking & Financial",
   "L2": "Insurance",
   "L3": "Not sure",
-  "match_quality": "closest"
+  "match_quality": "closest",
+  "confidence": 0.62
 }}
 
 Example 3:
@@ -65,7 +68,8 @@ Output:
   "L1": "Facilities",
   "L2": "Janitorial Services",
   "L3": "Not sure",
-  "match_quality": "closest"
+  "match_quality": "closest",
+  "confidence": 0.58
 }}
 
 Example 4:
@@ -79,7 +83,8 @@ Output:
   "L1": "T&E",
   "L2": "Air",
   "L3": "Not sure",
-  "match_quality": "closest"
+  "match_quality": "closest",
+  "confidence": 0.66
 }}
 
 END OF EXAMPLES
