@@ -10,7 +10,7 @@ MODEL="openai/gpt-oss-120b"
 
 def classify_po(po_description: str, supplier: str="Not provided"):
     user_prompt=f"""
-PD Description:
+PO Description:
 {po_description}
 
 Supplier:
@@ -25,4 +25,5 @@ Supplier:
         ]
     )
     return Response.choices[0].message.content
+
     
