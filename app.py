@@ -74,6 +74,18 @@ def _taxonomy_status(parsed: dict) -> tuple[bool | None, str]:
     return True, "Classification matches taxonomy."
 
 
+def _match_quality_note(parsed: dict) -> str | None:
+    quality = parsed.get("match_quality") if isinstance(parsed, dict) else None
+    if not quality:
+        return None
+    quality = str(quality).strip().lower()
+    if quality == "closest":
+        return "Closest taxonomy match selected (not exact)."
+    if quality == "not_sure":
+        return "Model could not find a reasonable match."
+    return None
+
+
 tab_single, tab_bulk, tab_history = st.tabs(["Single", "Bulk CSV", "History"])
 
 with tab_single:
@@ -148,6 +160,10 @@ with tab_single:
                     st.success(status_msg)
                 else:
                     st.warning(status_msg)
+
+                note = _match_quality_note(parsed)
+                if note:
+                    st.info(note)
 
                 st.subheader("Full Output")
                 st.json(parsed)
