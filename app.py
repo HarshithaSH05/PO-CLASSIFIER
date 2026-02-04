@@ -14,17 +14,46 @@ st.set_page_config(page_title="PO Category Classifier", layout="centered")
 st.title("PO L1-L2-L3 Classifier")
 st.caption("Paste a purchase order description to classify L1/L2/L3 categories.")
 
-po_description = st.text_area(
-    "PO Description",
-    height=120,
-    placeholder="Example: Annual maintenance for HVAC systems across all facilities.",
-    help="Be as specific as possible for best results.",
-)
-supplier = st.text_input(
-    "Supplier (optional)",
-    placeholder="Example: Acme Mechanical Inc.",
-    help="Optional, but can improve classification accuracy.",
-)
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+with st.sidebar:
+    st.subheader("Quick Start")
+    sample = st.selectbox(
+        "Example descriptions",
+        [
+            "Annual maintenance for HVAC systems across all facilities.",
+            "Microsoft 365 enterprise subscription renewal.",
+            "Recruitment fees for senior engineering roles.",
+            "Catering services for quarterly all-hands meeting.",
+        ],
+    )
+    use_sample = st.checkbox("Use selected example")
+
+    st.subheader("Quality Tips")
+    st.write("Include item type, scope, and duration.")
+    st.write("Mention supplier if known.")
+
+col_left, col_right = st.columns([3, 1])
+with col_left:
+    po_description = st.text_area(
+        "PO Description",
+        height=140,
+        value=sample if use_sample else "",
+        placeholder="Example: Annual maintenance for HVAC systems across all facilities.",
+        help="Be as specific as possible for best results.",
+    )
+with col_right:
+    supplier = st.text_input(
+        "Supplier (optional)",
+        placeholder="Example: Acme Mechanical Inc.",
+        help="Optional, but can improve classification accuracy.",
+    )
+    st.write("")
+    clear = st.button("Clear", use_container_width=True)
+    if clear:
+        st.session_state.history = []
+        st.experimental_rerun()
 
 
 def _extract_levels(parsed: dict) -> tuple[str | None, str | None, str | None]:
@@ -35,7 +64,7 @@ def _extract_levels(parsed: dict) -> tuple[str | None, str | None, str | None]:
     return l1, l2, l3
 
 
-if st.button("Classify"):
+if st.button("Classify", use_container_width=True):
     po_description = po_description.strip()
     supplier = supplier.strip()
 
@@ -75,15 +104,27 @@ if st.button("Classify"):
                 parsed = None
 
         if parsed is not None:
-            st.json(parsed)
-
             l1, l2, l3 = _extract_levels(parsed)
+            key = None
+            in_taxonomy = None
             if l1 is not None and l2 is not None:
                 key = f"{str(l1).strip()}|{str(l2).strip()}|{str(l3 or '').strip()}"
-                if key not in get_taxonomy_set():
-                    st.warning("Classification not in taxonomy — needs review.")
-            else:
+                in_taxonomy = key in get_taxonomy_set()
+
+            metric_cols = st.columns(3)
+            metric_cols[0].metric("L1", str(l1 or "—"))
+            metric_cols[1].metric("L2", str(l2 or "—"))
+            metric_cols[2].metric("L3", str(l3 or "—"))
+
+            if in_taxonomy is False:
+                st.warning("Classification not in taxonomy — needs review.")
+            elif in_taxonomy is None:
                 st.warning("Classification missing L1/L2 fields — needs review.")
+            else:
+                st.success("Classification matches taxonomy.")
+
+            st.subheader("Full Output")
+            st.json(parsed)
 
             st.download_button(
                 "Download JSON",
@@ -91,6 +132,19 @@ if st.button("Classify"):
                 file_name="po_classification.json",
                 mime="application/json",
             )
+
+            st.session_state.history.insert(
+                0,
+                {
+                    "description": po_description,
+                    "supplier": supplier,
+                    "l1": l1,
+                    "l2": l2,
+                    "l3": l3,
+                    "raw": parsed,
+                },
+            )
+            st.session_state.history = st.session_state.history[:10]
         else:
             st.error("Invalid model response")
             st.code(result or "", language="text")
@@ -102,3 +156,19 @@ if st.button("Classify"):
         else:
             st.write("Raw response:")
             st.code(result or "", language="text")
+
+st.divider()
+st.subheader("Recent Classifications")
+if st.session_state.history:
+    for item in st.session_state.history:
+        summary = f"{item['l1'] or '—'} / {item['l2'] or '—'} / {item['l3'] or '—'}"
+        with st.expander(summary):
+            st.write("Description:")
+            st.code(item["description"] or "", language="text")
+            if item["supplier"]:
+                st.write("Supplier:")
+                st.code(item["supplier"], language="text")
+            st.write("Result:")
+            st.json(item["raw"])
+else:
+    st.write("No classifications yet.")
